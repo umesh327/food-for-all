@@ -1,0 +1,3 @@
+rm ../FoodForAllLex2RDS.zip
+zip -X -r ../FoodForAllLex2RDS.zip *
+aws lambda update-function-code --function-name FoodForAllLex2RDS --zip-file fileb:///home/ec2-user/environment/lambda/FoodForAllLex2RDS.zip 
