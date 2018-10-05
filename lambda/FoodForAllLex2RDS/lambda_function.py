@@ -17,7 +17,6 @@ dbuser=environ.get('DB_USER')
 password=environ.get('DB_PASSWORD')
 port=environ.get('DB_PORT')
 MILES_TO_METERS = 1609
-RADIUS_IN_MILES = 5
 results = []
 
 logger=logging.getLogger()
@@ -31,8 +30,8 @@ def log_err(errmsg):
         "isBase64Encoded":"false"}
 
 def make_connection():
-    conn_str="host={0} dbname={1} user={2} password={3} port={4}" + 
-    " connect_timeout=5".format(endpoint,database,dbuser,password,port)
+    conn_str="host={0} dbname={1} user={2} password={3} port={4} connect_timeout=5".format(
+        endpoint,database,dbuser,password,port)
     conn = psycopg2.connect(conn_str)
     conn.autocommit=True
     return conn 
@@ -58,8 +57,7 @@ def xstr(s):
 def geocode(address):
     print('geocode, address = ' + address)
     encaddress = quote_plus(address)
-    request = Request('https://api.opencagedata.com/geocode/v1/json?q=' + 
-    encaddress + '&key=fb70adb01cef44979effa1fe70150099&language=en')
+    request = Request('https://api.opencagedata.com/geocode/v1/json?q=' + encaddress + '&key=fb70adb01cef44979effa1fe70150099&language=en')
     response = json.loads(urlopen(request).read())
     return response['results']
 
@@ -90,12 +88,9 @@ def lambda_handler(event, context):
         geometry = geo_result[0]['geometry']
         print('formatted ' + formatted)
         print('geometry ' + xstr(geometry))
-        geopoint = 'SRID=4326;POINT(' + str(geometry['lng']) + ' ' + 
-        str(geometry['lat']) + ')'
-        dbquery = "insert into registrations values (\'{0}\',  \'{1}\'," +
-                  "\'{2}\', \'{3}\',      \'{4}\', \'{5}\', \'{6}\', "
-                  "\'{7}\')".format(userId, full_name, address, channel_type, 
-                  registrationType, geohash, w3w,  geopoint)
+        geopoint = 'SRID=4326;POINT(' + str(geometry['lng']) + ' ' + str(geometry['lat']) + ')'
+        dbquery = "insert into registrations values (\'{0}\',  \'{1}\',   \'{2}\', \'{3}\',      \'{4}\', \'{5}\', \'{6}\', \'{7}\')".format(
+                                                       userId, full_name, address, channel_type, registrationType, geohash, w3w,  geopoint)
         ret, results = exec_statement(cnx, dbquery)
         content = "Error in saving registration"
         if ret >= 0:
@@ -112,8 +107,7 @@ def lambda_handler(event, context):
         }
         
     if intentName == 'CheckRegistration':
-        dbquery = "select full_name from registrations where" +
-                  "userId=\'{0}\'".format(userId)
+        dbquery = "select full_name from registrations where userId=\'{0}\'".format(userId)
         ret, results = exec_statement(cnx, dbquery)
         if ret >= 0:
             content = "You were already registered. Thank you."
@@ -143,17 +137,10 @@ def lambda_handler(event, context):
             newstr = expiry
             ts_format = "YYYY-MM-DD"
             
-        dbquery = "insert into donations values (\'{0}\',  \'{1}\',   " +
-        "\'{2}\', to_timestamp(\'{3}\', \'{4}\'))".format(userId, food_type, 
-        expiry, newstr, ts_format)
-        ret, results = exec_statement(cnx, dbquery)
-        dbquery = "select r1.userId, r1.full_name, r1.address, " +
-        "r1.channel_type from registrations r1 left join registrations " +
-        "r2 on ST_DWithin(r1.location, r2.location, {0}) where " +
-        "(r1.reg_type='patron' or r1.reg_type='both') and " +
-        "(r2.reg_type='donor' and r2.userId in " +
-        "(select userId from donations))".format(
-            RADIUS_IN_MILES * MILES_TO_METERS)
+        dbquery = "insert into donations values (\'{0}\',  \'{1}\',   \'{2}\', to_timestamp(\'{3}\', \'{4}\'))".format(
+                                                  userId, food_type, expiry,   newstr,            ts_format)
+        ret, result = exec_statement(cnx, dbquery)
+        dbquery = "select r1.userId, r1.full_name, r1.address, r1.channel_type from registrations r1 left join registrations r2 on ST_DWithin(r1.location, r2.location, {0}) where (r1.reg_type='patron' or r1.reg_type='both') and (r2.reg_type='donor' and r2.userId in (select userId from donations))".format(5*1609)
         ret, results = exec_statement(cnx, dbquery)
         print("ret " + str(ret))
         print(results)
