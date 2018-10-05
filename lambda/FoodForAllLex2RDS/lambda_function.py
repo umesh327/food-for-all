@@ -10,6 +10,7 @@ import psycopg2
 import logging
 import traceback
 import json
+import boto3
 
 endpoint=environ.get('DB_ENDPOINT')
 database=environ.get('DB_NAME')
@@ -126,6 +127,7 @@ def lambda_handler(event, context):
         }      
         
     if intentName == 'DonateFood':
+        sns = boto3.client('sns')
         results = []
         food_type = event['currentIntent']['slots']['Food']
         expiry = event['currentIntent']['slots']['Expiry'] 
@@ -140,11 +142,25 @@ def lambda_handler(event, context):
         dbquery = "insert into donations values (\'{0}\',  \'{1}\',   \'{2}\', to_timestamp(\'{3}\', \'{4}\'))".format(
                                                   userId, food_type, expiry,   newstr,            ts_format)
         ret, result = exec_statement(cnx, dbquery)
+        dbquery = "select full_name, address from registrations where userId = \'{0}\'".format(userId)
+        ret, result = exec_statement(cnx, dbquery)
+        donor="Test"
+        if ret > 0:
+            print(result)
+            donor = result[0][0]
+        print(donor)
         dbquery = "select r1.userId, r1.full_name, r1.address, r1.channel_type from registrations r1 left join registrations r2 on ST_DWithin(r1.location, r2.location, {0}) where (r1.reg_type='patron' or r1.reg_type='both') and (r2.reg_type='donor' and r2.userId in (select userId from donations))".format(5*1609)
         ret, results = exec_statement(cnx, dbquery)
         print("ret " + str(ret))
         print(results)
-        content = "Thank you. We will find and notify patrons."
+        content = ""
+        for r in results:
+            print(r[1])
+            print(r[2])
+            print(r[3])
+            if r[3] == 'Twilio-SMS':
+                sns.publish(PhoneNumber='+' + r[0], Message="{0} is donating food")
+                content += "{0} at {1} will be contacted for pickup.".format(r[1], r[2])
         response = {
             "dialogAction": {
                 "type": "Close",
