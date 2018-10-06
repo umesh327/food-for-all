@@ -147,20 +147,28 @@ def lambda_handler(event, context):
         donor="Test"
         if ret > 0:
             print(result)
-            donor = result[0][0]
-        print(donor)
+            donor_name = result[0][0]
+            donor_address = result[0][1]
+            donor_phone = userId
+        print(donor_name)
+        print(donor_address)
+        print(donor_phone)
         dbquery = "select r1.userId, r1.full_name, r1.address, r1.channel_type from registrations r1 left join registrations r2 on ST_DWithin(r1.location, r2.location, {0}) where (r1.reg_type='patron' or r1.reg_type='both') and (r2.reg_type='donor' and r2.userId in (select userId from donations))".format(5*1609)
         ret, results = exec_statement(cnx, dbquery)
         print("ret " + str(ret))
         print(results)
         content = ""
         for r in results:
-            print(r[1])
-            print(r[2])
-            print(r[3])
-            if r[3] == 'Twilio-SMS':
-                sns.publish(PhoneNumber='+' + r[0], Message="{0} is donating food")
-                content += "{0} at {1} will be contacted for pickup.".format(r[1], r[2])
+            patron_phone = r[0]
+            patron_name = r[1]
+            patron_addr = r[2]
+            chl = r[3]
+            print(patron_name)
+            print(patron_addr)
+            print(patron_phone)
+            if chl == 'Twilio-SMS':
+                sns.publish(PhoneNumber='+' + patron_phone, Message="{0} is donating {1} food expires by {2} it can be picked up from {3}. You can reach them at {4}. Please confirm with the donor.".format(donor_name, food_type, expiry, donor_address, donor_phone))
+                content += "{0} at {1} will be contacted for pickup. You can reach patron at {2}".format(patron_name, patron_addr, patron_phone)
         response = {
             "dialogAction": {
                 "type": "Close",
