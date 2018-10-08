@@ -11,6 +11,7 @@ After speaking to several food pantries and interviewing several grocery stores,
 ## Solution 
 
 Food for All serverless application works as follows:
-1. Users register for the first time using a SMS Chatbot.
-2. After initial registration, a donor can submit a donation anytime by simply sending a text message.
-3. Every time a new donation is made, app backend will use a geo spatial query to find nearest patrons within 5 miles from the donor, sends them a text message if they want to accept the food donation.
+1. Any user would like to either donate, receive food would register with the service by sending a text message "Register" to (551) 231 7912. After that the application will ask a series of questions to collect data from the user. 
+2. Once a user is registered, they can check their registration status by sending a text "find me" to above number.  If they were already registered, they will receive a text message confirming their status.
+3. When a user is ready to donate food, they would send a text "donate" to above number and a couple of questions would be asked to identify the type of food and expiry. After this, the application will try to find any patrons available within 5 miles of donor's address. If any found, the application will send details of donor to patron and vice versa.
+4. 
